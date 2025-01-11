@@ -11,6 +11,11 @@ A CLI tool built using Bun, Commander, Weaviate, OpenAI, and Claude to streamlin
 - **OpenAI & Claude:** Dual AI providers for cover letter generation
 - **tsyringe:** Dependency injection container
 - **Docker:** Runs Weaviate locally
+- **cli-table3:** Terminal table layouts
+- **inquirer:** Interactive command line interface
+- **chalk:** Terminal styling
+- **ora:** Terminal spinners
+- **boxen:** Terminal boxes
 
 ## Project Structure
 
@@ -71,24 +76,50 @@ bun run generate-cover-letter
 
 ## Features
 
+### Enhanced CLI Experience
+
+- Beautiful terminal interface with colors and formatting
+- Interactive menus for all user choices
+- Progress indicators for long-running operations
+- Side-by-side comparison of AI drafts
+- Visual diffs of changes
+- File-based workflow support
+
+### Smart Input Handling
+
+- Multiple job description input methods:
+  - Direct file reading from job-description.txt
+  - Custom file path support
+  - Direct text input (with warnings for long text)
+- Preview of loaded content
+- Error handling and fallbacks
+
 ### AI Model Comparison
 
 - Generates cover letters using both OpenAI and Claude
-- Allows comparison and selection between different AI outputs
+- Side-by-side visual comparison
+- Easy selection interface
+- Shows number of similar past letters used for context
 - Stores successful generations for future reference
+
+### TextEdit Integration (macOS)
+
+- Open drafts directly in TextEdit
+- Save edits back to txt file
+- Seamless editing workflow
+
+### File-Based Workflow
+
+- Uses job-description.txt for input
+- Saves drafts to cover-letter.txt
+- All files in plain text format
+- Easy to edit and version control
 
 ### Vector Similarity Search
 
 - Uses OpenAI embeddings for semantic similarity search
 - Finds relevant past cover letters to guide new generations
 - Improves suggestions based on your submission history
-
-### Interactive Refinement
-
-- Compare drafts from different AI models
-- Edit and refine the selected draft
-- View a diff of your changes
-- Store final versions for future reference
 
 ## Architecture
 
@@ -104,23 +135,42 @@ bun run generate-cover-letter
 - Easy to add new AI providers or switch implementations
 - Consistent error handling across services
 
-## Commands
-
-### `generate-cover-letter`
-
-- Generates cover letters using multiple AI models
-- Compares outputs and allows selection
-- Shows diffs between drafts and final versions
-- Stores submissions with vector embeddings
-
 ## Workflow
 
-1. **Input Job Description:** Enter the job description in the CLI
-2. **Similar Letter Search:** System finds relevant past submissions
-3. **Multi-Model Generation:** Both OpenAI and Claude generate drafts
-4. **Compare and Select:** Choose your preferred draft
-5. **Refine and Submit:** Edit the draft and see your changes
-6. **Store for Learning:** Final version is stored with embeddings
+1. **Input Job Description:**
+
+   - Use job-description.txt
+   - Specify custom file
+   - Direct input for short descriptions
+
+2. **Similar Letter Search:**
+
+   - System finds relevant past submissions
+   - Shows number of similar letters found
+   - Uses them to guide generation
+
+3. **Multi-Model Generation:**
+
+   - Both OpenAI and Claude generate drafts
+   - Side-by-side comparison
+   - Visual formatting for easy reading
+
+4. **Compare and Select:**
+
+   - Choose preferred draft
+   - Open in TextEdit for editing (macOS)
+   - Save changes to txt file
+
+5. **Review and Finalize:**
+
+   - Preview final version
+   - See visual diff of changes
+   - Confirm before saving
+
+6. **Store for Learning:**
+   - Final version stored with embeddings
+   - Improves future suggestions
+   - Builds knowledge base
 
 ## Troubleshooting
 
