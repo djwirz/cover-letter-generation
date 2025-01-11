@@ -1,0 +1,1 @@
+export { default as generateCoverLetterCommand } from './generate-cover-letter';

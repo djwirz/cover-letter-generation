@@ -1,0 +1,31 @@
+{
+  "name": "cover-letter-agent",
+  "type": "module",
+  "scripts": {
+    "build-weaviate": "docker-compose build",
+    "start-weaviate": "docker-compose up",
+    "logs-weaviate": "docker logs -f weaviate-container",
+    "stop-weaviate": "docker-compose down",
+    "generate-cover-letter": "bun run --preload ./loader.ts index.ts generate-cover-letter"
+  },
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^20.0.0",
+    "bun-types": "latest",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.33.1",
+    "@types/diff": "^7.0.0",
+    "commander": "^13.0.0",
+    "diff": "^7.0.0",
+    "dotenv": "^16.4.7",
+    "openai": "^4.77.3",
+    "reflect-metadata": "^0.2.2",
+    "tslib": "^2.8.1",
+    "tsyringe": "^4.8.0",
+    "weaviate-ts-client": "^2.2.0",
+    "zod": "^3.24.1"
+  }
+}

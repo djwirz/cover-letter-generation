@@ -1,0 +1,9 @@
+name = "cover-letter-app"
+entry = ["index.ts"]
+outdir = "dist"
+
+[runtime]
+polyfill = ["reflect-metadata"]
+
+[debug]
+credentials = true
