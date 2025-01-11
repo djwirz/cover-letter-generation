@@ -12,8 +12,8 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { platform } from 'os';
 import path from 'path';
-import { CoverLetterService, ProfileService } from '../services';
-import { AIClient } from '../types';
+import { CoverLetterService, ProfileService, ProfileFormatter } from '../services';
+import { AIClient, GeneratedContent } from '../types';
 
 const execAsync = promisify(exec);
 
@@ -24,6 +24,7 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
       // Get service instances
       const profileService = container.resolve(ProfileService);
       const coverLetterService = container.resolve(CoverLetterService);
+      const profileFormatter = container.resolve(ProfileFormatter);
       const openAIClient = container.resolve<AIClient>('OpenAIClient');
       const claudeClient = container.resolve<AIClient>('ClaudeClient');
 
@@ -105,7 +106,7 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
         ));
 
         // Generate drafts in parallel
-        console.log('\nGenerating drafts...\n');
+        console.log('\nAnalyzing job description and generating tailored drafts...\n');
         
         // First check for similar letters
         const similarLetters = await coverLetterService.getSimilarLetters(jobDescription);
@@ -113,14 +114,13 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
           console.log(chalk.cyan(`Found ${similarLetters.length} similar cover letters to guide the generation.`));
         }
 
-        const promptTemplate = `Based on this profile: ${JSON.stringify(profile)},
-          job description: ${jobDescription},
-          ${similarLetters.length > 0 ? `and similar past letters for reference:\n${similarLetters.map(l => l.submittedCoverLetter).join('\n\n')},` : ''}
-          generate a cover letter.`;
-
-        const [openAIDraft, claudeDraft] = await Promise.all([
-          openAIClient.generateText(promptTemplate),
-          claudeClient.generateText(promptTemplate)
+        const [openAIDraft, claudeDraft] = await Promise.all<GeneratedContent>([
+          openAIClient.generateText(
+            profileFormatter.formatForOpenAI(profile, jobDescription)
+          ),
+          claudeClient.generateText(
+            profileFormatter.formatForClaude(profile, jobDescription)
+          )
         ]);
 
         // Display drafts side by side
@@ -164,7 +164,7 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
 
         const selectedDraft = preferredDraft === 'a' ? openAIDraft.content : claudeDraft.content;
 
-        // Handle Pages integration for macOS
+        // Handle text editor integration for macOS
         if (platform() === 'darwin') {
           const { openInTextEdit } = await inquirer.prompt([{
             type: 'confirm',

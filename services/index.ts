@@ -1,2 +1,3 @@
-export * from './profile.service';
-export * from './cover-letter.service';
+export * from './Profile';
+export * from './CoverLetter';
+export * from './ProfileFormatter'

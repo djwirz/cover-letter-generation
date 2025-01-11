@@ -12,17 +12,71 @@ export interface GeneratedContent {
   metadata?: Record<string, unknown>;
 }
 
-// Domain-specific types
 export interface UserProfile {
   name: string;
   title: string;
+  preferred_name: string;
   summary: string;
-  skills: string[];
+  letter_preferences: {
+    greeting: string;
+    structure: {
+      length: string;
+      format: string;
+    };
+    closing: {
+      gratitude: string;
+      signature: string;
+    };
+  };
+  contact: {
+    location: string;
+    email: string;
+    linkedin: string;
+  };
+  skills: {
+    core: {
+      languages: string[];
+      frontend: string[];
+      backend: string[];
+      databases: string[];
+      cloud: string[];
+      testing: string[];
+      monitoring: string[];
+    };
+    soft: string[];
+  };
   experience: Array<{
-    role: string;
     company: string;
-    accomplishments: string[];
+    role: string;
+    duration: string;
+    highlights: string[];
+    technologies: string[];
   }>;
+  education: {
+    institution: string;
+    field: string;
+    duration: string;
+    details: string;
+  };
+  achievements: string[];
+  targeting?: {
+    roles: string[];
+    industries: string[];
+    company_sizes: string[];
+    focus_areas: string[];
+  };
+  achievements_by_category?: {
+    leadership: string[];
+    technical: string[];
+    collaboration: string[];
+    innovation: string[];
+  };
+  volunteer_experience?: {
+    organization: string;
+    location: string;
+    duration: string;
+    highlights: string[];
+  };
 }
 
 export interface StoredCoverLetter {
@@ -32,7 +86,6 @@ export interface StoredCoverLetter {
   embedding: VectorData;
 }
 
-// Client interfaces (could potentially come from client libraries)
 export interface AIClient {
   generateText(prompt: string): Promise<GeneratedContent>;
 }
@@ -47,3 +100,7 @@ export interface DatabaseClient {
   querySimilar<T>(className: string, vector: number[], fields: string[], limit?: number): Promise<T[]>;
   testConnection(): Promise<boolean>;
 }
+
+export type ExperienceWithRelevance = UserProfile['experience'][0] & { 
+  relevance: number 
+};
