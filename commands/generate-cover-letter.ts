@@ -7,6 +7,13 @@ import boxen from 'boxen';
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
 import wrap from 'wrap-ansi';
+import { writeFile } from 'fs/promises';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { platform } from 'os';
+import path from 'path';
+
+const execAsync = promisify(exec);
 import type { AIClient } from '../types';
 import { ProfileService, CoverLetterService } from '../services';
 
@@ -31,13 +38,53 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
       const profile = await profileService.loadProfile();
       profileSpinner.succeed('Profile loaded successfully');
 
-      // Get job description using simple text input
-      const { jobDescription } = await inquirer.prompt([{
+      // Get job description with paste mode
+      console.log(chalk.cyan('\nEnter or paste the job description below.'));
+      console.log(chalk.yellow('When finished, press Enter, then type ":done" and press Enter again.'));
+      
+      let jobDescription = '';
+      const { content } = await inquirer.prompt([{
         type: 'input',
-        name: 'jobDescription',
-        message: 'Enter the job description:',
+        name: 'content',
+        message: 'Start typing or paste now:',
         validate: (input) => input.trim().length > 0 ? true : 'Job description cannot be empty'
       }]);
+      
+      jobDescription = content;
+      
+      // Keep accepting input until :done is entered
+      while (true) {
+        const { line } = await inquirer.prompt([{
+          type: 'input',
+          name: 'line',
+          message: ''
+        }]);
+        
+        if (line.trim().toLowerCase() === ':done') {
+          break;
+        }
+        
+        jobDescription += '\n' + line;
+      }
+      
+      // Show confirmation of captured text
+      console.log('\n' + boxen(chalk.bold('Captured Job Description:') + '\n\n' + jobDescription, {
+        padding: 1,
+        borderColor: 'yellow',
+        margin: 1
+      }));
+      
+      const { confirmText } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'confirmText',
+        message: 'Is this the complete job description?',
+        default: true
+      }]);
+      
+      if (!confirmText) {
+        console.log(chalk.red('Process cancelled. Please try again.'));
+        return;
+      }
 
       // Search similar letters with progress bar
       const searchSpinner = ora('Searching for similar cover letters...').start();
@@ -105,7 +152,32 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
 
       const selectedDraft = preferredDraft === 'a' ? openAIDraft.content : claudeDraft.content;
 
-      // Edit final version using simple text input
+      // After selecting preferred draft, ask about opening in Pages
+      const { openInPages } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'openInPages',
+        message: 'Would you like to open this draft in Pages?',
+        default: true,
+        when: () => platform() === 'darwin' // Only show on macOS
+      }]);
+
+      if (openInPages) {
+        const spinner = ora('Opening in Pages...').start();
+        try {
+          // Create a temporary file with the content
+          const tempFilePath = path.join(process.cwd(), 'cover-letter.txt');
+          await writeFile(tempFilePath, selectedDraft, 'utf8');
+          
+          // Open with Pages
+          await execAsync(`open -a "Pages" "${tempFilePath}"`);
+          spinner.succeed('Opened in Pages');
+        } catch (error) {
+          spinner.fail('Failed to open in Pages. Is Pages installed?');
+          console.error(chalk.red('Error details:'), error);
+        }
+      }
+
+      // Continue with editing if needed
       const { finalDraft } = await inquirer.prompt([{
         type: 'input',
         name: 'finalDraft',
