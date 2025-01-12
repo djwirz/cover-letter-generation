@@ -7,7 +7,7 @@ import boxen from 'boxen';
 import inquirer from 'inquirer';
 import Table from 'cli-table3';
 import wrap from 'wrap-ansi';
-import { writeFile, readFile, access } from 'fs/promises';
+import { writeFile, readFile, access, unlink } from 'fs/promises';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { platform } from 'os';
@@ -16,6 +16,47 @@ import { CoverLetterService, ProfileService, ProfileFormatter } from '../service
 import { AIClient, GeneratedContent } from '../types';
 
 const execAsync = promisify(exec);
+
+// Helper function to handle file operations
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function deleteFileIfExists(filePath: string): Promise<void> {
+  if (await fileExists(filePath)) {
+    await unlink(filePath);
+  }
+}
+
+async function openInTextEditAndWaitForSave(filePath: string, initialContent: string = ''): Promise<string> {
+  await deleteFileIfExists(filePath);
+  await writeFile(filePath, initialContent, 'utf8');
+  
+  const spinner = ora('Opening in TextEdit...').start();
+  try {
+    await execAsync(`open -a "TextEdit" "${filePath}"`);
+    spinner.succeed('Opened in TextEdit');
+    
+    // Wait for user to confirm they've saved and closed TextEdit
+    await inquirer.prompt([{
+      type: 'confirm',
+      name: 'saved',
+      message: 'Please save and close TextEdit when finished. Have you completed your edits?',
+      default: true
+    }]);
+
+    // Read the updated content
+    return await readFile(filePath, 'utf8');
+  } catch (error) {
+    spinner.fail('Failed to open in TextEdit');
+    throw error;
+  }
+}
 
 const generateCoverLetterCommand = new Command('generate-cover-letter')
   .description('Generate and compare two cover letters interactively.')
@@ -45,52 +86,35 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
         name: 'inputMethod',
         message: 'How would you like to input the job description?',
         choices: [
-          { name: 'Use job-description.txt from current directory', value: 'file' },
-          { name: 'Specify a different file path', value: 'custom-file' },
-          { name: 'Type/paste directly (not recommended for long text)', value: 'direct' }
+          { name: 'Open TextEdit for new input', value: 'textedit' },
+          { name: 'Use existing file', value: 'existing-file' }
         ]
       }]);
 
       let jobDescription = '';
       const loadingSpinner = ora();
+      const jobDescriptionPath = path.join(process.cwd(), 'job-description.txt');
 
       try {
-        switch (inputMethod) {
-          case 'file':
-            loadingSpinner.start('Reading job-description.txt...');
-            jobDescription = await readFile('job-description.txt', 'utf8');
-            loadingSpinner.succeed('Job description loaded from file');
-            break;
-
-          case 'custom-file':
-            const { filePath } = await inquirer.prompt([{
-              type: 'input',
-              name: 'filePath',
-              message: 'Enter the path to your job description file:',
-              validate: async (input) => {
-                try {
-                  await access(input);
-                  return true;
-                } catch {
-                  return 'File does not exist or is not accessible';
-                }
+        if (inputMethod === 'textedit') {
+          jobDescription = await openInTextEditAndWaitForSave(jobDescriptionPath);
+        } else {
+          const { filePath } = await inquirer.prompt([{
+            type: 'input',
+            name: 'filePath',
+            message: 'Enter the path to your job description file:',
+            validate: async (input) => {
+              try {
+                await access(input);
+                return true;
+              } catch {
+                return 'File does not exist or is not accessible';
               }
-            }]);
-            loadingSpinner.start('Reading file...');
-            jobDescription = await readFile(filePath, 'utf8');
-            loadingSpinner.succeed('Job description loaded from file');
-            break;
-
-          case 'direct':
-            console.log(chalk.yellow('\nWarning: This method may truncate long text. Consider using a file instead.'));
-            const { text } = await inquirer.prompt([{
-              type: 'input',
-              name: 'text',
-              message: 'Enter job description:',
-              validate: (input) => input.trim().length > 0 ? true : 'Job description cannot be empty'
-            }]);
-            jobDescription = text;
-            break;
+            }
+          }]);
+          loadingSpinner.start('Reading file...');
+          jobDescription = await readFile(filePath, 'utf8');
+          loadingSpinner.succeed('Job description loaded from file');
         }
 
         // Show preview of loaded content
@@ -108,7 +132,6 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
         // Generate drafts in parallel
         console.log('\nAnalyzing job description and generating tailored drafts...\n');
         
-        // First check for similar letters
         const similarLetters = await coverLetterService.getSimilarLetters(jobDescription);
         if (similarLetters.length > 0) {
           console.log(chalk.cyan(`Found ${similarLetters.length} similar cover letters to guide the generation.`));
@@ -163,119 +186,46 @@ const generateCoverLetterCommand = new Command('generate-cover-letter')
         }]);
 
         const selectedDraft = preferredDraft === 'a' ? openAIDraft.content : claudeDraft.content;
+        const coverLetterPath = path.join(process.cwd(), 'cover-letter.txt');
 
-        // Handle text editor integration for macOS
         if (platform() === 'darwin') {
-          const { openInTextEdit } = await inquirer.prompt([{
-            type: 'confirm',
-            name: 'openInTextEdit',
-            message: 'Would you like to open this draft in TextEdit?',
-            default: true
-          }]);
+          console.log(chalk.cyan('\nOpening selected draft in TextEdit for final editing...'));
+          const finalCoverLetter = await openInTextEditAndWaitForSave(coverLetterPath, selectedDraft);
 
-          if (openInTextEdit) {
-            const spinner = ora('Opening in TextEdit...').start();
-            try {
-              const tempFilePath = path.join(process.cwd(), 'cover-letter.txt');
-              await writeFile(tempFilePath, selectedDraft, 'utf8');
-              await execAsync(`open -a "TextEdit" "${tempFilePath}"`);
-              spinner.succeed('Opened in TextEdit');
-            } catch (error) {
-              spinner.fail('Failed to open in TextEdit');
-              console.error(chalk.red('Error details:'), error);
+          // Show preview of final content
+          console.log('\n' + boxen(
+            chalk.bold('Final Cover Letter Preview:') + '\n\n' + 
+            finalCoverLetter.slice(0, 200) + 
+            (finalCoverLetter.length > 200 ? '...' : ''),
+            {
+              padding: 1,
+              borderColor: 'green',
+              margin: 1
             }
-          }
+          ));
+
+          // Show diff analysis
+          console.log('\n=== Changes Made ===');
+          const diffResult = diffWords(selectedDraft, finalCoverLetter);
+          
+          diffResult.forEach((part) => {
+            const color = part.added ? chalk.green :
+                         part.removed ? chalk.red :
+                         chalk.gray;
+            process.stdout.write(color(part.value));
+          });
+
+          // Store the final version
+          console.log('\nStoring the final cover letter...');
+          await coverLetterService.storeCoverLetter(jobDescription, finalCoverLetter);
+          console.log('\nFinal cover letter stored successfully.');
+        } else {
+          console.log(chalk.yellow('\nTextEdit integration is only available on macOS.'));
+          // Handle non-macOS systems...
         }
-
-        // Get final version
-        const { coverLetterInput } = await inquirer.prompt([{
-          type: 'list',
-          name: 'coverLetterInput',
-          message: 'How would you like to provide the final cover letter?',
-          choices: [
-            { name: 'Read from final-cover-letter.txt', value: 'file' },
-            { name: 'Use the selected draft as-is', value: 'as-is' },
-            { name: 'Type/paste directly (not recommended for long text)', value: 'direct' }
-          ]
-        }]);
-
-        let finalCoverLetter: string;
-
-        switch (coverLetterInput) {
-          case 'file':
-            loadingSpinner.start('Reading final-cover-letter.txt...');
-            try {
-              finalCoverLetter = await readFile('final-cover-letter.txt', 'utf8');
-              loadingSpinner.succeed('Final cover letter loaded from file');
-            } catch (error) {
-              loadingSpinner.fail('Could not read final-cover-letter.txt');
-              console.log(chalk.yellow('\nFalling back to selected draft...'));
-              finalCoverLetter = selectedDraft;
-            }
-            break;
-
-          case 'as-is':
-            finalCoverLetter = selectedDraft;
-            break;
-
-          case 'direct':
-            console.log(chalk.yellow('\nWarning: This method may truncate long text. Consider using a file instead.'));
-            const { text } = await inquirer.prompt([{
-              type: 'input',
-              name: 'text',
-              message: 'Enter final cover letter:',
-              default: selectedDraft
-            }]);
-            finalCoverLetter = text;
-            break;
-
-          default:
-            finalCoverLetter = selectedDraft;
-        }
-
-        // Show preview of final content
-        console.log('\n' + boxen(
-          chalk.bold('Final Cover Letter Preview:') + '\n\n' + 
-          finalCoverLetter.slice(0, 200) + 
-          (finalCoverLetter.length > 200 ? '...' : ''),
-          {
-            padding: 1,
-            borderColor: 'green',
-            margin: 1
-          }
-        ));
-
-        // Confirm the final version
-        const { confirmFinal } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'confirmFinal',
-          message: 'Would you like to proceed with this version?',
-          default: true
-        }]);
-
-        if (!confirmFinal) {
-          console.log(chalk.red('Process cancelled. Please try again.'));
-          return;
-        }
-
-        // Show diff analysis
-        console.log('\n=== Changes Made ===');
-        const diffResult = diffWords(selectedDraft, finalCoverLetter);
-        
-        diffResult.forEach((part) => {
-          const color = part.added ? chalk.green :
-                       part.removed ? chalk.red :
-                       chalk.gray;
-          process.stdout.write(color(part.value));
-        });
-
-        // Store the final version
-        console.log('\nStoring the final cover letter...');
-        await coverLetterService.storeCoverLetter(jobDescription, finalCoverLetter);
-        console.log('\nFinal cover letter stored successfully.');
 
       } catch (error) {
-        console.error(chalk.red('An error occurred while processing the job description:'), error);
+        console.error(chalk.red('An error occurred while processing:'), error);
         return;
       }
 
