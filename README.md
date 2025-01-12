@@ -1,5 +1,6 @@
 # Cover Letter Generator CLI
 
+<p align="center"> <img src="media/demo.gif" alt="Demo of Project" width="800" /> </p>
 A CLI tool built using Bun, Commander, Weaviate, OpenAI, and Claude to streamline the generation and refinement of cover letters for job applications. The system compares generations from different AI models and uses vector similarity to learn from past submissions.
 
 ## Tech Stack
