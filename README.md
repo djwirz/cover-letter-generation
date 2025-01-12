@@ -19,22 +19,22 @@ A CLI tool built using Bun, Commander, Weaviate, OpenAI, and Claude to streamlin
 
 ## Project Structure
 
-```
+\```
 src/
 ├── config/
-│   ├── index.ts         # Exports all configuration
-│   ├── environment.ts   # Environment variable handling & validation
-│   └── constants.ts     # All constant values used across the app
+│ ├── index.ts # Exports all configuration
+│ ├── environment.ts # Environment variable handling & validation
+│ └── constants.ts # All constant values used across the app
 ├── types/
-│   └── index.ts         # Shared type definitions
+│ └── index.ts # Shared type definitions
 ├── clients/
-│   ├── ai/             # AI client implementations
-│   ├── database/       # Database client implementations
-│   └── embedding/      # Embedding client implementations
-├── services/           # Business logic services
-├── commands/           # CLI commands
-└── index.ts           # Application entry point
-```
+│ ├── ai/ # AI client implementations
+│ ├── database/ # Database client implementations
+│ └── embedding/ # Embedding client implementations
+├── services/ # Business logic services
+├── commands/ # CLI commands
+└── index.ts # Application entry point
+\```
 
 ## Setup Instructions
 
@@ -42,37 +42,38 @@ src/
 
 - **Bun** installed: [https://bun.sh/](https://bun.sh/)
 - **Docker** installed for running Weaviate
+- **TextEdit** (for macOS users)
 
 ### 2. Installation
 
-```bash
+\```bash
 bun install
-```
+\```
 
 ### 3. Environment Variables
 
 Create a `.env` file:
 
-```bash
+\```bash
 OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 WEAVIATE_HOST=localhost:8080
 WEAVIATE_SCHEME=http
-```
+\```
 
 ## Running the Application
 
 ### Start Weaviate
 
-```bash
+\```bash
 bun run start-weaviate
-```
+\```
 
 ### Generate a Cover Letter
 
-```bash
+\```bash
 bun run generate-cover-letter
-```
+\```
 
 ## Features
 
@@ -83,16 +84,16 @@ bun run generate-cover-letter
 - Progress indicators for long-running operations
 - Side-by-side comparison of AI drafts
 - Visual diffs of changes
-- File-based workflow support
+- Seamless TextEdit integration for file editing
 
 ### Smart Input Handling
 
-- Multiple job description input methods:
-  - Direct file reading from job-description.txt
-  - Custom file path support
-  - Direct text input (with warnings for long text)
+- Flexible job description input methods:
+  - Open new TextEdit window for direct input
+  - Use existing file path
 - Preview of loaded content
 - Error handling and fallbacks
+- Automatic file cleanup to prevent conflicts
 
 ### AI Model Comparison
 
@@ -104,14 +105,17 @@ bun run generate-cover-letter
 
 ### TextEdit Integration (macOS)
 
-- Open drafts directly in TextEdit
-- Save edits back to txt file
-- Seamless editing workflow
+- Seamless integration with TextEdit for both input and editing
+- Automatic file cleanup before opening new documents
+- Wait for user confirmation after editing
+- Single file workflow for simpler interaction
+- Maintains clean working directory
 
 ### File-Based Workflow
 
-- Uses job-description.txt for input
-- Saves drafts to cover-letter.txt
+- Dynamic file management for job descriptions
+- Unified editing experience through TextEdit
+- Automatic file cleanup to prevent confusion
 - All files in plain text format
 - Easy to edit and version control
 
@@ -139,9 +143,9 @@ bun run generate-cover-letter
 
 1. **Input Job Description:**
 
-   - Use job-description.txt
-   - Specify custom file
-   - Direct input for short descriptions
+   - Open fresh TextEdit window for new input
+   - Use existing file path
+   - Automatic file management
 
 2. **Similar Letter Search:**
 
@@ -158,14 +162,15 @@ bun run generate-cover-letter
 4. **Compare and Select:**
 
    - Choose preferred draft
-   - Open in TextEdit for editing (macOS)
-   - Save changes to txt file
+   - Automatic opening in TextEdit
+   - Seamless editing experience
 
 5. **Review and Finalize:**
 
    - Preview final version
    - See visual diff of changes
-   - Confirm before saving
+   - Automatic file management
+   - Single-file workflow
 
 6. **Store for Learning:**
    - Final version stored with embeddings
@@ -177,31 +182,41 @@ bun run generate-cover-letter
 ### Common Issues
 
 1. **Weaviate Connection:**
+   \```bash
 
-   ```bash
    # Check if Weaviate is running
+
    docker ps
+
    # Restart if needed
+
    bun run stop-weaviate
    bun run start-weaviate
-   ```
+   \```
 
-2. **Environment Variables:**
+2. **TextEdit Issues:**
+
+   - Ensure TextEdit is installed (macOS only)
+   - Check file permissions in working directory
+   - Confirm changes are saved before closing TextEdit
+
+3. **Environment Variables:**
 
    - Ensure both API keys are set
    - Check Weaviate host and scheme
+     \```bash
 
-   ```bash
    # Verify environment
-   cat .env
-   ```
 
-3. **Dependencies:**
-   ```bash
+   cat .env
+   \```
+
+4. **Dependencies:**
+   \```bash
    # Clean install
    rm -rf node_modules
    bun install
-   ```
+   \```
 
 ## Future Goals
 
@@ -217,11 +232,11 @@ bun run generate-cover-letter
    - Job description classification
    - Skill matching and suggestions
 
-3. **Cloud Deployment**
+3. **Cross-Platform Support**
 
-   - Remote Weaviate hosting
-   - Serverless deployment options
-   - Multi-user support
+   - Alternative text editors for non-macOS systems
+   - Platform-specific optimizations
+   - Consistent experience across operating systems
 
 4. **Analytics and Insights**
    - Track success rates
