@@ -19,22 +19,22 @@ A CLI tool built using Bun, Commander, Weaviate, OpenAI, and Claude to streamlin
 
 ## Project Structure
 
-\```
+```
 src/
 ├── config/
-│ ├── index.ts # Exports all configuration
-│ ├── environment.ts # Environment variable handling & validation
-│ └── constants.ts # All constant values used across the app
+│   ├── index.ts # Exports all configuration
+│   ├── environment.ts # Environment variable handling & validation
+│   └── constants.ts # All constant values used across the app
 ├── types/
-│ └── index.ts # Shared type definitions
+│   └── index.ts # Shared type definitions
 ├── clients/
-│ ├── ai/ # AI client implementations
-│ ├── database/ # Database client implementations
-│ └── embedding/ # Embedding client implementations
+│   ├── ai/ # AI client implementations
+│   ├── database/ # Database client implementations
+│   └── embedding/ # Embedding client implementations
 ├── services/ # Business logic services
 ├── commands/ # CLI commands
 └── index.ts # Application entry point
-\```
+```
 
 ## Setup Instructions
 
@@ -46,34 +46,34 @@ src/
 
 ### 2. Installation
 
-\```bash
+```bash
 bun install
-\```
+```
 
 ### 3. Environment Variables
 
 Create a `.env` file:
 
-\```bash
+```bash
 OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 WEAVIATE_HOST=localhost:8080
 WEAVIATE_SCHEME=http
-\```
+```
 
 ## Running the Application
 
 ### Start Weaviate
 
-\```bash
+```bash
 bun run start-weaviate
-\```
+```
 
 ### Generate a Cover Letter
 
-\```bash
+```bash
 bun run generate-cover-letter
-\```
+```
 
 ## Features
 
@@ -182,17 +182,15 @@ bun run generate-cover-letter
 ### Common Issues
 
 1. **Weaviate Connection:**
-   \```bash
 
+   ```bash
    # Check if Weaviate is running
-
    docker ps
 
    # Restart if needed
-
    bun run stop-weaviate
    bun run start-weaviate
-   \```
+   ```
 
 2. **TextEdit Issues:**
 
@@ -204,19 +202,18 @@ bun run generate-cover-letter
 
    - Ensure both API keys are set
    - Check Weaviate host and scheme
-     \```bash
 
+   ```bash
    # Verify environment
-
    cat .env
-   \```
+   ```
 
 4. **Dependencies:**
-   \```bash
+   ```bash
    # Clean install
    rm -rf node_modules
    bun install
-   \```
+   ```
 
 ## Future Goals
 
