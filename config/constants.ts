@@ -13,7 +13,7 @@ export const CONSTANTS = {
       COVER_LETTERS: 'SubmittedCoverLetter'
     },
     LIMITS: {
-      SIMILAR_LETTERS: 3
+      SIMILAR_LETTERS: 5
     }
   },
   ERRORS: {
